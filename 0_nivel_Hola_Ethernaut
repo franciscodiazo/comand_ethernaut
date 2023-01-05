@@ -8,6 +8,26 @@ Este es el nivel 0 del juego[Ethernaut](https://ethernaut.openzeppelin.com/).
 ## Atajos
 has leído las instrucciones del nivel 0 y ha adquirido el éter de prueba. Los métodos de contrato de nivel se inyectan directamente en la consola de nuestro navegador, por lo que podemos comenzar a llamar a los métodos.
 
+antes de iniciar: 
+
+1. Set up MetaMask
+2. Open the browser's console
+    Open your browser's console: Tools > Developer Tools.
+    comando (await chrome 64)
+      player
+3. Use the console helpers
+      getBalance(player)
+4. The ethernaut contract
+      ethernaut
+5. Interact with the ABI
+      ethernaut.owner() 
+7. Obtener una instancia de nivel
+      level instance
+8. Inspección del contrato
+      contract 
+9. Interactuar con el contrato para completar el nivel
+      contract.info()
+
 Empecemos. Las instrucciones piden llamar a este método en la consola:
 
 ```javascript
